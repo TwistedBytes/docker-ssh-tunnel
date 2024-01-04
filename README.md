@@ -29,7 +29,7 @@ Add this to the docker compose:
 1. 2 ways to use it:
    1. ssh-agent, which is the preferred way. as it does not need to copy ssh keys and no sshkey password issues.
     
-       use this:
+       Use this:
         ```yaml
               volumes:
                 - $SSH_AUTH_SOCK:/ssh-agent
@@ -37,8 +37,10 @@ Add this to the docker compose:
                 SSH_AUTH_SOCK: /ssh-agent
         ```
     2. ~/.ssh dir copy
+       
+       If you have a password on your sshkey, this will not work.
 
-        use this:
+       Use this:
         ```yaml
               volumes:
                 - $HOME/.ssh:/root/ssh:ro
@@ -52,6 +54,6 @@ Add this to the docker compose:
       ```php
       ...
       'database' => env('DB_DATABASE', 'postgres-tunnel-staging'),
-      'database' => env('DB_PORT', 5432),
+      'port' => env('DB_PORT', 5432),
       ...
       ```
