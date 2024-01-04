@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+set -e
+# set -x
+
+rm -rf /root/.ssh
+mkdir /root/.ssh
+
+if [[ -z $SSH_AUTH_SOCK  ]]; then
+    USING="using volume /ssh"
+    rm -rf /root/.ssh && mkdir /root/.ssh && cp -R /root/ssh/* /root/.ssh/
+else
+    USING="using ssh agent"
+fi
+
+cat << EOT > ~/.ssh/config
+ForwardAgent yes
+TCPKeepAlive yes
+ConnectTimeout 5
+ServerAliveCountMax 10
+ServerAliveInterval 15
+StrictHostKeyChecking no
+UserKnownHostsFile /dev/null
+EOT
+
+chmod -R 600 /root/.ssh/*
+
+cat << EOT
+twistedbytes/docker-ssh-tunnel:
+  Connecting to ${SSH_USERANDHOST}, then proxying ${REMOTE_HOST}:${REMOTE_PORT} to *:$LOCAL_PORT ${USING}
+EOT
+
+exec ssh -q ${SSH_DEBUG} \
+    -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
+    -N \
+    -p ${SSH_PORT} ${SSH_USERANDHOST}
