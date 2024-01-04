@@ -27,7 +27,7 @@ Add this to the docker compose:
 ```
 
 1. 2 ways to use it:
-   1. ssh-agent, which is the preferred way. as it does not need to copy ssh keys
+   1. ssh-agent, which is the preferred way. as it does not need to copy ssh keys and no sshkey password issues.
     
        use this:
         ```yaml
