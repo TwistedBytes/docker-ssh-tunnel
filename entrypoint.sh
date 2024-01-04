@@ -33,19 +33,19 @@ if [[ -n "${SSH_COMPRESSION}" ]]; then
   ARG_COMPRESS=${SSH_COMPRESSION}
 fi
 
-cat << EOT > ~/.ssh/config
-ForwardAgent yes
-TCPKeepAlive yes
-ConnectTimeout 5
-ServerAliveCountMax 10
-ServerAliveInterval 15
-StrictHostKeyChecking no
-UserKnownHostsFile /dev/null
-Compression ${ARG_COMPRESS}
-
-EOT
-
-chmod -R 600 /root/.ssh/*
+#cat << EOT > ~/.ssh/config
+#ForwardAgent yes
+#TCPKeepAlive yes
+#ConnectTimeout 5
+#ServerAliveCountMax 10
+#ServerAliveInterval 15
+#StrictHostKeyChecking no
+#UserKnownHostsFile /dev/null
+#Compression ${ARG_COMPRESS}
+#
+#EOT
+#
+#chmod -R 600 /root/.ssh/*
 
 # output something on start
 cat << EOT
@@ -55,6 +55,14 @@ twistedbytes/docker-ssh-tunnel:
                   slow connections, but will only slow down things on fast networks)
 EOT
 
-exec ssh -q ${SSH_DEBUG} -N \
-    -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
-    -p ${SSH_PORT} ${SSH_USERANDHOST}
+if [[ -n ${SSHPASS} ]]; then
+  echo using ssh pass to pass password to sshkey
+  sshpass -P "passphrase for key" -e \
+  ssh -q ${SSH_DEBUG} -N \
+          -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
+          -p ${SSH_PORT} ${SSH_USERANDHOST}
+else
+  exec ssh -q ${SSH_DEBUG} -N \
+      -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
+      -p ${SSH_PORT} ${SSH_USERANDHOST}
+fi
