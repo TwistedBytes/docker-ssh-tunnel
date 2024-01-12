@@ -5,7 +5,8 @@ MAINTAINER Derk Gortemaker <info@twistedbytes.nl>
 ENV SSH_PORT=22
 ENV SSH_USERANDHOST=user@server
 
-RUN apk add --update sshpass openssh-client && rm -rf /var/cache/apk/*
+RUN apk add --update sshpass openssh-client &&  \
+    apk add --no-cache bash && rm -rf /var/cache/apk/*
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod 755 /entrypoint.sh
