@@ -30,39 +30,62 @@ fi
 
 ARG_COMPRESS=no
 if [[ -n "${SSH_COMPRESSION}" ]]; then
+  if [[ ${SSH_COMPRESSION} != "no" ]] && [[ ${SSH_COMPRESSION} != "yes" ]]; then
+    echo "values for SSH_COMPRESSION: no or yes"
+    exit 1;
+  fi
   ARG_COMPRESS=${SSH_COMPRESSION}
 fi
 
-#cat << EOT > ~/.ssh/config
-#ForwardAgent yes
-#TCPKeepAlive yes
-#ConnectTimeout 5
-#ServerAliveCountMax 10
-#ServerAliveInterval 15
-#StrictHostKeyChecking no
-#UserKnownHostsFile /dev/null
-#Compression ${ARG_COMPRESS}
-#
-#EOT
-#
-#chmod -R 600 /root/.ssh/*
+cat << EOT > ~/.ssh/config
+ForwardAgent yes
+TCPKeepAlive yes
+ConnectTimeout 5
+ServerAliveCountMax 10
+ServerAliveInterval 15
+StrictHostKeyChecking no
+UserKnownHostsFile /dev/null
+Compression ${ARG_COMPRESS}
+
+EOT
+
+ chmod -R 600 /root/.ssh/*
+
+_SSH_ACTION=""
+
+if [[ -n $LOCAL_PORT ]] && [[ $REMOTE_HOST ]] && [[ $REMOTE_PORT ]]; then
+  _SSH_ACTION="-L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT}"
+  _OUTPUT="Connecting to ${SSH_USERANDHOST}, then proxying ${REMOTE_HOST}:${REMOTE_PORT} to *:$LOCAL_PORT ${USING}"
+fi
+if [[ -n $LOCAL_SOCKS_PORT ]]; then
+  _SSH_ACTION="-D *:${LOCAL_SOCKS_PORT}"
+  _OUTPUT="Connecting to ${SSH_USERANDHOST}, then socks5 proxying on ${LOCAL_SOCKS_PORT}"
+fi
+
+if [[ -z ${_SSH_ACTION} ]]; then
+  cat << EOT
+Unknown SSH tunnel to create. 2 types: use one or the other
+  - SSH port tunnel: LOCAL_PORT REMOTE_HOST REMOTE_PORT
+  - SSH socks5 tunnel: LOCAL_SOCKS_PORT
+EOT
+fi
 
 # output something on start
 cat << EOT
 twistedbytes/docker-ssh-tunnel:
-  Connecting to ${SSH_USERANDHOST}, then proxying ${REMOTE_HOST}:${REMOTE_PORT} to *:$LOCAL_PORT ${USING}
+  ${_OUTPUT}
   Compression: ${ARG_COMPRESS}, (ENV SSH_COMPRESSION=yes/no, compression is desirable on modem lines and other
                   slow connections, but will only slow down things on fast networks)
 EOT
 
 if [[ -n ${SSHPASS} ]]; then
   echo using ssh pass to pass password to sshkey
-  sshpass -P "passphrase for key" -e \
+  exec sshpass -P "passphrase for key" -e \
   ssh -q ${SSH_DEBUG} -N \
-          -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
+          ${_SSH_ACTION} \
           -p ${SSH_PORT} ${SSH_USERANDHOST}
 else
   exec ssh -q ${SSH_DEBUG} -N \
-      -L *:${LOCAL_PORT}:${REMOTE_HOST}:${REMOTE_PORT} \
+      ${_SSH_ACTION} \
       -p ${SSH_PORT} ${SSH_USERANDHOST}
 fi

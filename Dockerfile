@@ -13,4 +13,5 @@ RUN chmod 755 /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-EXPOSE 1-65535
+# EXPOSE 1-65535
+# EXPOSE 5432 8123
